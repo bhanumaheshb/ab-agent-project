@@ -12,11 +12,29 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// --- THIS IS THE FIX ---
-// This tells the server to allow requests from ANY origin.
-// This will fix the blocking error.
-app.use(cors());
-// ----------------------
+// --- THIS IS THE ROBUST PRODUCTION FIX ---
+const allowedOrigins = [
+  'http://localhost:5173', // Your local dev environment
+  'https://tangerine-lily-5aaf71.netlify.app' // Your live site
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Check if the incoming origin is in our allowed list, or if it's not a browser (e.g., Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('This origin is not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200 // For legacy browsers
+};
+
+// 1. Use the full CORS configuration
+app.use(cors(corsOptions));
+// 2. Explicitly handle pre-flight OPTIONS requests
+app.options('*', cors(corsOptions));
+// ----------------------------------------
 
 app.use(express.json()); // Parses incoming JSON data
 app.use(express.static('public')); // Serves static files
