@@ -1,0 +1,166 @@
+pyenv shell 3.11.8
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % pyenv shell 3.11.8
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % cd backend
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm install
+
+added 131 packages, and audited 132 packages in 4s
+
+22 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm run dev
+
+> backend@1.0.0 dev
+> nodemon index.js
+
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node index.js`
+Database connection error: MongoParseError: Invalid scheme, expected connection string to start with "mongodb://" or "mongodb+srv://"
+    at new ConnectionString (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongodb-connection-string-url/lib/index.js:86:19)
+    at parseOptions (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongodb/lib/connection_string.js:197:17)
+    at new MongoClient (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongodb/lib/mongo_client.js:68:61)
+    at NativeConnection.createClient (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongoose/lib/drivers/node-mongodb-native/connection.js:343:14)
+    at NativeConnection.openUri (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongoose/lib/connection.js:1075:34)
+    at Mongoose.connect (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/mongoose/lib/mongoose.js:450:15)
+    at Object.<anonymous> (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/index.js:22:10)
+    at Module._compile (node:internal/modules/cjs/loader:1760:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1480:32)
+[nodemon] clean exit - waiting for changes before restart
+^C
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm run dev
+
+> backend@1.0.0 dev
+> nodemon index.js
+
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+^C
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm run dev
+
+> backend@1.0.0 dev
+> nodemon index.js
+
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+^C
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm install jsonwebtoken bcryptjs
+
+added 14 packages, and audited 146 packages in 997ms
+
+22 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm run dev                      
+
+> backend@1.0.0 dev
+> nodemon index.js
+
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+[nodemon] restarting due to changes...
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/express/lib/router/route.js:216
+        throw new Error(msg);
+        ^
+
+Error: Route.get() requires a callback function but got a [object Undefined]
+    at Route.<computed> [as get] (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/express/lib/router/route.js:216:15)
+    at proto.<computed> [as get] (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/node_modules/express/lib/router/index.js:521:19)
+    at Object.<anonymous> (/Users/bhanumaheshb/Desktop/AB_AI_AGENT/backend/routes/experimentRoutes.js:18:8)
+    at Module._compile (node:internal/modules/cjs/loader:1760:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1480:32)
+    at Module._load (node:internal/modules/cjs/loader:1299:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    at Module.require (node:internal/modules/cjs/loader:1503:12)
+
+Node.js v24.9.0
+[nodemon] app crashed - waiting for file changes before starting...
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+[nodemon] restarting due to changes...
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080
+^C
+bhanumaheshb@Bhanus-MacBook-Air-3 backend % npm run dev
+
+> backend@1.0.0 dev
+> nodemon index.js
+
+[nodemon] 3.1.10
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node index.js`
+✅ Connected to MongoDB
+🚀 Backend server is running on http://localhost:8080

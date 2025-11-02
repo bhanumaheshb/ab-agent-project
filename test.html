@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maria's Test Page</title>
+
+    <script 
+      async 
+      src="http://localhost:8080/agent.js" 
+      data-exp-id="6903c6badd8b63ec9d5f365a">
+    </script>
+
+    <style>
+        /* Basic styling for our test */
+        body { font-family: sans-serif; display: grid; place-items: center; min-height: 80vh; }
+        #hero-button {
+            font-size: 24px;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            /* This is the "original" button style */
+            background-color: #888; 
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Maria's Landing Page</h1>
+    
+    <button id="hero-button" onclick="window.ABAgent.track()">
+        Click Me!
+    </button>
+    
+
+    <script>
+      // This function is called by your agent.js
+      window.onABAgentDecision = function(decision) {
+        
+        console.log('Agent Decision:', decision);
+        const button = document.getElementById('hero-button');
+
+        // This part needs to match the variation names
+        // for your new experiment, e.g., "100" and "200"
+        if (decision === 'Green Button') {
+          button.style.backgroundColor = 'green';
+          button.innerText = 'Get Fit Now';
+        } else if (decision === 'Blue Button') {
+          button.style.backgroundColor = 'blue';
+          button.innerText = 'Start Your Free Trial';
+        }
+      };
+    </script>
+
+</body>
+</html>

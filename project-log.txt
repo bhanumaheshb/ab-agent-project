@@ -1,0 +1,47 @@
+pyenv shell 3.11.8
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % pyenv shell 3.11.8
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch README.md
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch project-log.txt
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % mkdir backend/public
+touch backend/public/agent.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch test.html
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/models/User.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/models/Project.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/controllers/authController.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % mkdir backend/middleware
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % ouch backend/middleware/authMiddleware.js
+zsh: command not found: ouch
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/middleware/authMiddleware.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % ouch backend/controllers/projectController.js
+zsh: command not found: ouch
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/controllers/projectController.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/routes/projectRoutes.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % mkdir frontend/src/context
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/context/AuthContext.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/LoginPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/SignupPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/components/ProtectedRoute.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/ProjectsPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch project-logbackend.txt
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % 
+
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/controllers/adminController.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch backend/routes/adminRoutes.js
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/components/AdminRoute.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/AdminUsersPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/AdminProjectsPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % touch frontend/src/pages/ExperimentSetupPage.jsx
+bhanumaheshb@Bhanus-MacBook-Air-3 AB_AI_AGENT % 
+
+
+
+
+
+
+
+
+
+
+
+
+
