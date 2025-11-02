@@ -1,0 +1,14 @@
+# This is the main build configuration for Netlify
+[build]
+  # Tell Netlify to run all commands from inside the 'frontend' folder
+  base    = "frontend"
+  # The build command
+  command = "npm run build"
+  # The folder to publish
+  publish = "frontend/dist"
+
+# This is the redirect rule that fixes your "Page not found" error
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
