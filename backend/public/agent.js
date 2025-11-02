@@ -8,8 +8,8 @@
         return;
     }
 
-    // This is the backend server where our "Manager" is running
-    const API_BASE_URL = 'http://localhost:8080';
+    // --- NEW CODE ---
+    const API_BASE_URL = 'https://backend-service-ddt2.onrender.com';
 
     // 1. Get the decision from the backend
     fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`)

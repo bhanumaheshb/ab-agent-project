@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api', // The "Manager" server
+  baseURL: 'https://backend-service-ddt2.onrender.com/api', // The "Manager" server
   headers: {
     'Content-Type': 'application/json',
   },
