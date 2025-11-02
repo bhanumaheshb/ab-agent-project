@@ -4,8 +4,10 @@
   base    = "frontend"
   # The build command
   command = "npm run build"
-  # The folder to publish
-  publish = "frontend/dist"
+  
+  # --- THIS IS THE FIX ---
+  # The publish folder is 'dist' (relative to the 'base' directory)
+  publish = "dist"
 
 # This is the redirect rule that fixes your "Page not found" error
 [[redirects]]
