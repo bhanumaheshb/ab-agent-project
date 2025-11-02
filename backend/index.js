@@ -1,7 +1,7 @@
-require('dotenv').config(); // Loads .env file variables
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const cors = require('cors'); // We will configure this
 
 // Import your routes
 const experimentRoutes = require('./routes/experimentRoutes');
@@ -12,19 +12,23 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// --- Middleware ---
-app.use(cors()); // Allows your React frontend to talk to this server
-app.use(express.json()); // Parses incoming JSON data
+// --- THIS IS THE FIX ---
+// We must tell CORS to allow your live Netlify site
+const corsOptions = {
+  // Replace this with your actual Netlify URL
+  origin: 'https://tangerine-lily-5aaf71.netlify.app' 
+};
+app.use(cors(corsOptions));
+// ----------------------
 
-//--public--
-app.use(express.static('public')); // Serves static files from 'public' folder
+app.use(express.json()); // Parses incoming JSON data
+app.use(express.static('public')); // Serves static files
 
 // --- Routes ---
 app.use('/api/experiments', experimentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
-// app.use('/api/users', userRoutes);
 
 // --- Database Connection ---
 mongoose.connect(process.env.MONGODB_URI)
@@ -32,7 +36,8 @@ mongoose.connect(process.env.MONGODB_URI)
     console.log('✅ Connected to MongoDB');
     // Start the server ONLY after the database is connected
     app.listen(PORT, () => {
-      console.log(`🚀 Backend server is running on http://localhost:${PORT}`);
+      // THIS IS ALSO A FIX: Render's free plan uses port 10000
+      console.log(`🚀 Backend server is running on port ${PORT}`);
     });
   })
   .catch(err => {
