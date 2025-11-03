@@ -60,7 +60,7 @@ function ExperimentSetupPage() {
   const scriptTag = 
 `<script 
   async 
-  src="http://localhost:8080/agent.js" 
+  src="https://backend-service-0d12.onrender.com/agent.js" 
   data-exp-id="${experiment._id}">
 </script>`;
 
