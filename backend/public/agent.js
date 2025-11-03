@@ -1,76 +1,65 @@
 (function() {
-    // This runs immediately
-    const scriptTag = document.currentScript;
-    const experimentId = scriptTag.getAttribute('data-exp-id');
+  const scriptTag = document.currentScript;
+  const experimentId = scriptTag.getAttribute('data-exp-id');
 
-    if (!experimentId) {
-        console.error('A/B Agent: Experiment ID (data-exp-id) is missing.');
+  if (!experimentId) {
+    console.error('A/B Agent: Experiment ID (data-exp-id) is missing.');
+    return;
+  }
+
+  // ✅ Replace with your actual backend URL on Render
+  const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
+
+  // 1️⃣ Fetch variation decision
+  fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`)
+    .then(async response => {
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('A/B Agent: Server Error ->', errText);
         return;
-    }
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data && data.decision) {
+        // Store this decision for tracking later
+        window.ABAgent._setDecision(data.decision);
 
-    // --- THIS IS THE FIX ---
-    // This URL now points to the correct, live backend
-    const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
-    // ---------------------
-
-    // 1. Get the decision from the backend
-    fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`)
-        .then(response => {
-            if (!response.ok) {
-                // Handle HTTP errors
-                console.error('A/B Agent: Error from server.', response.status, response.statusText);
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data && data.decision) {
-                // We got a decision! (e.g., "100kg")
-                if (window.onABAgentDecision) {
-                    window.onABAgentDecision(data.decision);
-                }
-            }
-        })
-        .catch(err => {
-            // This is the error you are seeing (net::ERR_FAILED)
-            console.error('A/B Agent: Error fetching decision.', err);
-        });
-
-    // 2. Create a global 'track' function for Maria to call
-    window.ABAgent = {
-        track: function() {
-            // This function sends the "success" feedback
-            const decision = scriptTag.getAttribute('data-decision-made');
-            if (!decision) {
-                console.warn('A/B Agent: No decision to track.');
-                return;
-            }
-
-            fetch(`${API_BASE_URL}/api/experiments/${experimentId}/feedback`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ variationName: decision })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('A/B Agent: Feedback recorded.');
-            })
-            .catch(err => {
-                console.error('A/B Agent: Error recording feedback.', err);
-            });
-        },
-        
-        // Internal function to store the decision
-        _setDecision: function(decision) {
-             scriptTag.setAttribute('data-decision-made', decision);
+        // Trigger the website's callback (user-defined)
+        if (typeof window.onABAgentDecision === 'function') {
+          window.onABAgentDecision(data.decision);
         }
-    };
-    
-    // We override the 'onABAgentDecision' function to also store the decision
-    const originalCallback = window.onABAgentDecision || function() {};
-    window.onABAgentDecision = function(decision) {
-        window.ABAgent._setDecision(decision); // Store it
-        originalCallback(decision); // Call Maria's function
+      } else {
+        console.warn('A/B Agent: No decision returned from backend.');
+      }
+    })
+    .catch(err => {
+      console.error('A/B Agent: Error fetching decision ->', err);
+    });
+
+  // 2️⃣ Define global A/B Agent object
+  window.ABAgent = {
+    _decision: null,
+    _setDecision(decision) {
+      this._decision = decision;
+    },
+
+    // Called when user converts (e.g. button click)
+    track() {
+      if (!this._decision) {
+        console.warn('A/B Agent: No decision recorded yet.');
+        return;
+      }
+
+      fetch(`${API_BASE_URL}/api/experiments/${experimentId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variationName: this._decision })
+      })
+        .then(r => r.json())
+        .then(d => console.log('A/B Agent: Feedback recorded ✅', d))
+        .catch(e => console.error('A/B Agent: Error sending feedback ❌', e));
     }
+  };
 
 })();
