@@ -23,7 +23,8 @@ const prodOrigin = 'https://tangerine-lily-5aaf71.netlify.app';
 const deployPreviewOrigin = /^https:\/\/([a-z0-9\-]+)--tangerine-lily-5aaf71\.netlify\.app$/;
 
 const allowedOrigins = [
-  'http://localhost:5173', // Local dev
+  'http://localhost:5173',
+  'http://localhost:3000',// Local dev
   prodOrigin,              // Production
   deployPreviewOrigin,     // Deploy previews
 ];
