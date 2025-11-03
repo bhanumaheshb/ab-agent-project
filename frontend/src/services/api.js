@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://backend-service-0d12.onrender.com', // The "Manager" server
+  
+  baseURL: 'https://backend-service-0d12.onrender.com/api', 
+  // ---------------------
   headers: {
     'Content-Type': 'application/json',
   },
@@ -48,15 +50,14 @@ const createExperiment = (data) => {
   return apiClient.post('/experiments', data);
 };
 
-
-
-// --- Admin Routes --- (ADD THESE FUNCTIONS)
-const getAdminUsers = () => {
-  return apiClient.get('/admin/users');
-};
-
 const getExperimentStats = (id) => {
   return apiClient.get(`/experiments/${id}/stats`);
+};
+
+
+// --- Admin Routes ---
+const getAdminUsers = () => {
+  return apiClient.get('/admin/users');
 };
 
 const getAdminProjects = () => {
@@ -72,8 +73,8 @@ export default {
   createProject,
   getExperimentsByProject,
   createExperiment,
-  getAdminUsers,    // <-- This line will now work
-  getAdminProjects, // <-- This line will now work
+  getAdminUsers,
+  getAdminProjects,
   getExperimentById,
   getExperimentStats,
 };
