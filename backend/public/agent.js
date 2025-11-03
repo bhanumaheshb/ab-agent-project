@@ -8,22 +8,31 @@
         return;
     }
 
-    // --- NEW CODE ---
-    const API_BASE_URL = 'https://backend-service-ddt2.onrender.com';
+    // --- THIS IS THE FIX ---
+    // This URL now points to the correct, live backend
+    const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
+    // ---------------------
 
     // 1. Get the decision from the backend
     fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                // Handle HTTP errors
+                console.error('A/B Agent: Error from server.', response.status, response.statusText);
+                return;
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.decision) {
-                // We got a decision! (e.g., "blue-button")
-                // Now, we call a function on the customer's website
+            if (data && data.decision) {
+                // We got a decision! (e.g., "100kg")
                 if (window.onABAgentDecision) {
                     window.onABAgentDecision(data.decision);
                 }
             }
         })
         .catch(err => {
+            // This is the error you are seeing (net::ERR_FAILED)
             console.error('A/B Agent: Error fetching decision.', err);
         });
 
