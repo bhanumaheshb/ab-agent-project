@@ -1,12 +1,12 @@
 const Experiment = require('../models/Experiment');
 const Project = require('../models/Project');
-const DailyStat = require('../models/DailyStat'); // <-- IMPORTED
-const { getStartOfDay } = require('../utils/dateUtils'); // <-- IMPORTED
+const DailyStat = require('../models/DailyStat');
+const { getStartOfDay } = require('../utils/dateUtils');
 const axios = require('axios');
 
 // --- Helper function to update daily stats ---
 const updateDailyStats = async (type, experiment, variation) => {
-  const today = getStartOfDay(); // Get today's date at 00:00:00
+  const today = getStartOfDay();
 
   await DailyStat.findOneAndUpdate(
     {
@@ -15,7 +15,7 @@ const updateDailyStats = async (type, experiment, variation) => {
       date: today
     },
     {
-      $inc: { [type]: 1 }, // Increment 'trials' or 'successes'
+      $inc: { [type]: 1 },
       $setOnInsert: {
         user: experiment.user,
         project: experiment.project,
@@ -23,7 +23,7 @@ const updateDailyStats = async (type, experiment, variation) => {
       }
     },
     {
-      upsert: true, // "update or insert"
+      upsert: true,
       new: true
     }
   );
@@ -39,6 +39,7 @@ exports.getExperimentsByProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
+
     const experiments = await Experiment.find({
       project: projectId,
       user: req.user.id,
@@ -70,23 +71,29 @@ exports.createExperiment = async (req, res) => {
   try {
     const { name, variations, projectId } = req.body;
     if (!name || !variations || variations.length < 2 || !projectId) {
-      return res.status(400).json({ message: 'Experiment must have a name, projectId, and at least 2 variations.' });
+      return res.status(400).json({
+        message: 'Experiment must have a name, projectId, and at least 2 variations.'
+      });
     }
+
     const project = await Project.findOne({ _id: projectId, user: req.user.id });
     if (!project) {
       return res.status(403).json({ message: 'Not authorized to add experiments to this project' });
     }
+
     const experimentVariations = variations.map(v => ({
       name: v.name,
       trials: 0,
       successes: 0
     }));
+
     const newExperiment = new Experiment({
       name,
       variations: experimentVariations,
       project: projectId,
       user: req.user.id,
     });
+
     await newExperiment.save();
     res.status(201).json(newExperiment);
   } catch (error) {
@@ -94,47 +101,94 @@ exports.createExperiment = async (req, res) => {
   }
 };
 
-// --- PUBLIC AGENT ROUTES (UPGRADED) ---
+// --- PUBLIC AGENT ROUTES (IMPROVED) ---
 
-// @desc    Get a decision from the ML service
+// @desc    Get a decision from the ML service (with retry + fallback)
 exports.getDecision = async (req, res) => {
   try {
     const experiment = await Experiment.findById(req.params.id);
     if (!experiment) {
       return res.status(404).json({ message: 'Experiment not found' });
     }
-    
+
     if (experiment.status !== 'running') {
       return res.status(200).json({ decision: experiment.variations[0].name });
     }
 
-    const mlResponse = await axios.post(
-      `${process.env.ML_SERVICE_URL}/decision`,
-      { variations: experiment.variations }
-    );
-    
-    const winnerName = mlResponse.data.decision;
+    const payload = { variations: experiment.variations };
+    const mlUrl = `${process.env.ML_SERVICE_URL}/decision`;
+
+    let mlResponse;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        mlResponse = await axios.post(mlUrl, payload);
+        break; // success
+      } catch (err) {
+        attempts++;
+        const status = err.response?.status;
+        console.warn(`⚠️ ML API attempt ${attempts} failed (${status || 'no response'})`);
+
+        // Handle rate-limit (429) with backoff
+        if (status === 429 && attempts < maxAttempts) {
+          const wait = 500 * attempts; // exponential delay
+          console.log(`⏳ Rate limit hit. Retrying after ${wait}ms...`);
+          await new Promise(res => setTimeout(res, wait));
+          continue;
+        }
+
+        // Other server errors (>=500), retry
+        if (status >= 500 && attempts < maxAttempts) {
+          await new Promise(res => setTimeout(res, 300 * attempts));
+          continue;
+        }
+
+        // If permanent failure, throw
+        throw err;
+      }
+    }
+
+    let winnerName;
+
+    if (mlResponse && mlResponse.data?.decision) {
+      winnerName = mlResponse.data.decision;
+      console.log(`✅ ML decision: ${winnerName}`);
+    } else {
+      console.warn("⚠️ ML service unavailable — using fallback decision");
+
+      // Local Thompson-like fallback
+      const localDecision = experiment.variations.reduce(
+        (best, v) => {
+          const score = (v.successes + 1) / (v.trials + 2);
+          return score > best.score ? { name: v.name, score } : best;
+        },
+        { name: experiment.variations[0].name, score: 0 }
+      );
+      winnerName = localDecision.name;
+    }
+
+    // Record trial
     const winnerVariation = experiment.variations.find(v => v.name === winnerName);
-    
     if (winnerVariation) {
-      // 1. Update total score
       winnerVariation.trials += 1;
-      
-      // 2. Update daily score (NEW)
-      updateDailyStats('trials', experiment, winnerVariation);
-      
-      // 3. Save total score
+      await updateDailyStats('trials', experiment, winnerVariation);
       await experiment.save();
     }
-    
+
     res.status(200).json({ decision: winnerName });
+
   } catch (error) {
-    console.error('Error getting decision:', error.message);
-    res.status(500).json({ message: 'Error getting decision', error: error.message });
+    console.error('❌ Error getting decision:', error.message);
+    res.status(200).json({
+      decision: 'default',
+      warning: 'ML service unavailable, default variation shown'
+    });
   }
 };
 
-// @desc    Record a success/conversion
+// @desc    Record feedback (conversion)
 exports.recordFeedback = async (req, res) => {
   try {
     const { variationName } = req.body;
@@ -152,43 +206,32 @@ exports.recordFeedback = async (req, res) => {
       return res.status(404).json({ message: 'Variation not found' });
     }
 
-    // 1. Update total score
     variation.successes += 1;
-    
-    // 2. Update daily score (NEW)
-    updateDailyStats('successes', experiment, variation);
-    
-    // 3. Save total score
+    await updateDailyStats('successes', experiment, variation);
     await experiment.save();
-    
+
     res.status(200).json({ message: 'Feedback recorded successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error recording feedback', error: error.message });
   }
 };
 
-// ... (keep all other functions: getDecision, recordFeedback, etc.)
-
 // @desc    Get daily stats for an experiment
-// @route   GET /api/experiments/:id/stats
-// @access  Private
 exports.getExperimentStats = async (req, res) => {
   try {
-    // First, check if this user owns this experiment
     const experiment = await Experiment.findOne({
       _id: req.params.id,
       user: req.user.id,
     });
-    
+
     if (!experiment) {
       return res.status(404).json({ message: 'Experiment not found' });
     }
 
-    // Now, find all daily stats for this experiment
     const stats = await DailyStat.find({
       experiment: req.params.id,
       user: req.user.id,
-    }).sort({ date: 'asc' }); // Sort by date ascending
+    }).sort({ date: 'asc' });
 
     res.status(200).json(stats);
   } catch (error) {
