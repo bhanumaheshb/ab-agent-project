@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors'); // We will configure this
+const cors = require('cors');
 
 // Import your routes
 const experimentRoutes = require('./routes/experimentRoutes');
@@ -12,27 +12,40 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// --- THIS IS THE ROBUST PRODUCTION FIX ---
+// --- THIS IS THE DYNAMIC PRODUCTION FIX ---
+
+// 1. Your main production URL
+const prodOrigin = 'https://tangerine-lily-5aaf71.netlify.app';
+
+// 2. A RegEx to match all Netlify "deploy previews"
+// This matches https://[any-string]--tangerine-lily-5aaf71.netlify.app
+const deployPreviewOrigin = /^https://([a-z0-9-]+)--tangerine-lily-5aaf71\.netlify\.app$/;
+
 const allowedOrigins = [
   'http://localhost:5173', // Your local dev environment
-  'https://tangerine-lily-5aaf71.netlify.app' // Your live site
+  prodOrigin,               // Your live site
+  deployPreviewOrigin         // All your Netlify deploy previews
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Check if the incoming origin is in our allowed list, or if it's not a browser (e.g., Postman)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Check if the incoming origin is in our allowed list (string or regex match)
+    // or if it's not a browser (e.g., Postman)
+    if (!origin || allowedOrigins.some(o => 
+        typeof o === 'string' ? o === origin : o.test(origin)
+    )) {
       callback(null, true);
     } else {
-      callback(new Error('This origin is not allowed by CORS'));
+      console.error('CORS Error: This origin is not allowed:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   optionsSuccessStatus: 200 // For legacy browsers
 };
 
-// 1. Use the full CORS configuration
+// 3. Use the full CORS configuration
 app.use(cors(corsOptions));
-// 2. Explicitly handle pre-flight OPTIONS requests
+// 4. Explicitly handle pre-flight OPTIONS requests
 app.options('*', cors(corsOptions));
 // ----------------------------------------
 
