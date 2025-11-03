@@ -24,7 +24,7 @@ const deployPreviewOrigin = /^https://([a-z0-9-]+)--tangerine-lily-5aaf71\.netli
 const allowedOrigins = [
   'http://localhost:5173', // Your local dev environment
   prodOrigin,               // Your live site
-  deployPreviewOrigin         // All your Netlify deploy previews
+  deployPreviewOrigin,        // <-- THIS COMMA WAS MISSING
 ];
 
 const corsOptions = {
