@@ -24,7 +24,9 @@ const deployPreviewOrigin = /^https:\/\/([a-z0-9\-]+)--tangerine-lily-5aaf71\.ne
 
 const allowedOrigins = [
   'http://localhost:5173', // Your local dev environment
-  'http://localhost:3000', // Your test.html server
+  'http://localhost:3000',
+  'http://localhost:8001', // <-- THIS IS THE FIX (Python server)
+  'http://[::]:8001',// Your test.html server
   prodOrigin,               // Your live site
   deployPreviewOrigin,
 ];
