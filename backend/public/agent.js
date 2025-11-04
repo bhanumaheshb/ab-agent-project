@@ -1,4 +1,4 @@
-// public/agent.js
+// public/agent.js (copy & replace)
 (function () {
   const scriptTag = document.currentScript;
   const experimentId = scriptTag && scriptTag.getAttribute && scriptTag.getAttribute('data-exp-id');
@@ -8,10 +8,8 @@
     return;
   }
 
-  // Backend base URL (ensure this is the same origin or CORS-enabled backend)
   const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
 
-  // --- internal state / utilities ---
   const debugLog = (...args) => {
     try { console.log.apply(console, ['A/B Agent:'].concat(args)); } catch (e) {}
   };
@@ -37,9 +35,8 @@
     } catch (e) { /* ignore DOM errors */ }
   };
 
-  // --- AB Agent global object set immediately so other code can call it safely ---
+  // --- Define window.ABAgent immediately so pages can call `.track()` right away ---
   (function defineGlobal() {
-    const eventQueue = []; // queued decisions/callbacks
     let decisionValue = null;
 
     function flushIfCallbackExists() {
@@ -53,8 +50,7 @@
       }
     }
 
-    // Watch for a page that defines window.onABAgentDecision *after* agent loads.
-    // Poll a few times then stop.
+    // Poll briefly for onABAgentDecision if it's registered after agent load
     let watchCount = 0;
     const watchInterval = setInterval(() => {
       watchCount += 1;
@@ -62,7 +58,7 @@
         debugLog('Detected window.onABAgentDecision defined later; flushing.');
         flushIfCallbackExists();
         clearInterval(watchInterval);
-      } else if (watchCount > 20) { // ~20 * 250ms = 5s
+      } else if (watchCount > 20) { // ~5s
         clearInterval(watchInterval);
       }
     }, 250);
@@ -70,22 +66,18 @@
     window.ABAgent = {
       _decision: null,
 
-      // internal setter used by the fetch workflow
       _setDecision(decision) {
         this._decision = decision;
         decisionValue = decision;
         debugLog('_setDecision:', decision);
         makeDebugOverlay('Decision: ' + decision);
-        // attempt to call page callback immediately if present
         flushIfCallbackExists();
       },
 
-      // returns the chosen variation name or null
       getDecision() {
         return this._decision;
       },
 
-      // Called when user converts (e.g. button click)
       async track(extra = {}) {
         if (!this._decision) {
           console.warn('A/B Agent: No decision recorded yet. Call track() after a decision is present.');
@@ -98,7 +90,6 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-            // no credentials by default; change if backend requires them
           });
           if (!res.ok) {
             const text = await res.text();
@@ -113,7 +104,6 @@
         }
       },
 
-      // helper: wait until the agent has a decision, returns a promise
       ready(timeoutMs = 5000) {
         const self = this;
         return new Promise((resolve, reject) => {
@@ -134,7 +124,7 @@
     };
   })();
 
-  // --- 1) Fetch variation decision from backend ---
+  // --- Fetch decision ---
   (async function fetchDecision() {
     try {
       debugLog('Fetching decision for experiment', experimentId);
@@ -152,7 +142,6 @@
 
       const data = await res.json();
       if (data && data.decision) {
-        // Use the safe API (ABAgent exists)
         try {
           window.ABAgent._setDecision(data.decision);
         } catch (e) {
