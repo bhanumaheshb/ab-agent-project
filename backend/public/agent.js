@@ -1,65 +1,171 @@
-(function() {
+// public/agent.js
+(function () {
   const scriptTag = document.currentScript;
-  const experimentId = scriptTag.getAttribute('data-exp-id');
+  const experimentId = scriptTag && scriptTag.getAttribute && scriptTag.getAttribute('data-exp-id');
 
   if (!experimentId) {
     console.error('A/B Agent: Experiment ID (data-exp-id) is missing.');
     return;
   }
 
-  // ✅ Replace with your actual backend URL on Render
+  // Backend base URL (ensure this is the same origin or CORS-enabled backend)
   const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
 
-  // 1️⃣ Fetch variation decision
-  fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`)
-    .then(async response => {
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('A/B Agent: Server Error ->', errText);
+  // --- internal state / utilities ---
+  const debugLog = (...args) => {
+    try { console.log.apply(console, ['A/B Agent:'].concat(args)); } catch (e) {}
+  };
+
+  const makeDebugOverlay = (text) => {
+    try {
+      let el = document.getElementById('__ab_agent_debug');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '__ab_agent_debug';
+        el.style.position = 'fixed';
+        el.style.right = '8px';
+        el.style.bottom = '8px';
+        el.style.zIndex = 999999;
+        el.style.padding = '6px 10px';
+        el.style.background = 'rgba(0,0,0,0.7)';
+        el.style.color = '#fff';
+        el.style.fontSize = '12px';
+        el.style.borderRadius = '6px';
+        document.body && document.body.appendChild(el);
+      }
+      el.textContent = text;
+    } catch (e) { /* ignore DOM errors */ }
+  };
+
+  // --- AB Agent global object set immediately so other code can call it safely ---
+  (function defineGlobal() {
+    const eventQueue = []; // queued decisions/callbacks
+    let decisionValue = null;
+
+    function flushIfCallbackExists() {
+      if (typeof window.onABAgentDecision === 'function' && decisionValue !== null) {
+        try {
+          debugLog('Invoking onABAgentDecision with ->', decisionValue);
+          window.onABAgentDecision(decisionValue);
+        } catch (e) {
+          console.error('A/B Agent: Error invoking onABAgentDecision', e);
+        }
+      }
+    }
+
+    // Watch for a page that defines window.onABAgentDecision *after* agent loads.
+    // Poll a few times then stop.
+    let watchCount = 0;
+    const watchInterval = setInterval(() => {
+      watchCount += 1;
+      if (typeof window.onABAgentDecision === 'function') {
+        debugLog('Detected window.onABAgentDecision defined later; flushing.');
+        flushIfCallbackExists();
+        clearInterval(watchInterval);
+      } else if (watchCount > 20) { // ~20 * 250ms = 5s
+        clearInterval(watchInterval);
+      }
+    }, 250);
+
+    window.ABAgent = {
+      _decision: null,
+
+      // internal setter used by the fetch workflow
+      _setDecision(decision) {
+        this._decision = decision;
+        decisionValue = decision;
+        debugLog('_setDecision:', decision);
+        makeDebugOverlay('Decision: ' + decision);
+        // attempt to call page callback immediately if present
+        flushIfCallbackExists();
+      },
+
+      // returns the chosen variation name or null
+      getDecision() {
+        return this._decision;
+      },
+
+      // Called when user converts (e.g. button click)
+      async track(extra = {}) {
+        if (!this._decision) {
+          console.warn('A/B Agent: No decision recorded yet. Call track() after a decision is present.');
+          return;
+        }
+        const payload = Object.assign({ variationName: this._decision }, extra);
+        try {
+          debugLog('Sending feedback', payload);
+          const res = await fetch(`${API_BASE_URL}/api/experiments/${experimentId}/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            // no credentials by default; change if backend requires them
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            console.error('A/B Agent: Feedback failed ->', res.status, text);
+            return;
+          }
+          const body = await res.json();
+          debugLog('A/B Agent: Feedback recorded ✅', body);
+          makeDebugOverlay('Feedback recorded');
+        } catch (e) {
+          console.error('A/B Agent: Error sending feedback ❌', e);
+        }
+      },
+
+      // helper: wait until the agent has a decision, returns a promise
+      ready(timeoutMs = 5000) {
+        const self = this;
+        return new Promise((resolve, reject) => {
+          if (self._decision) return resolve(self._decision);
+          const start = Date.now();
+          const id = setInterval(() => {
+            if (self._decision) {
+              clearInterval(id);
+              return resolve(self._decision);
+            }
+            if (Date.now() - start > timeoutMs) {
+              clearInterval(id);
+              return reject(new Error('ABAgent: ready() timed out'));
+            }
+          }, 100);
+        });
+      }
+    };
+  })();
+
+  // --- 1) Fetch variation decision from backend ---
+  (async function fetchDecision() {
+    try {
+      debugLog('Fetching decision for experiment', experimentId);
+      const res = await fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('A/B Agent: Server Error ->', res.status, txt);
+        makeDebugOverlay('Decision fetch failed: ' + res.status);
         return;
       }
-      return response.json();
-    })
-    .then(data => {
-      if (data && data.decision) {
-        // Store this decision for tracking later
-        window.ABAgent._setDecision(data.decision);
 
-        // Trigger the website's callback (user-defined)
-        if (typeof window.onABAgentDecision === 'function') {
-          window.onABAgentDecision(data.decision);
+      const data = await res.json();
+      if (data && data.decision) {
+        // Use the safe API (ABAgent exists)
+        try {
+          window.ABAgent._setDecision(data.decision);
+        } catch (e) {
+          console.error('A/B Agent: Error setting decision', e);
         }
       } else {
-        console.warn('A/B Agent: No decision returned from backend.');
+        console.warn('A/B Agent: No decision returned from backend.', data);
+        makeDebugOverlay('No decision returned');
       }
-    })
-    .catch(err => {
+    } catch (err) {
       console.error('A/B Agent: Error fetching decision ->', err);
-    });
-
-  // 2️⃣ Define global A/B Agent object
-  window.ABAgent = {
-    _decision: null,
-    _setDecision(decision) {
-      this._decision = decision;
-    },
-
-    // Called when user converts (e.g. button click)
-    track() {
-      if (!this._decision) {
-        console.warn('A/B Agent: No decision recorded yet.');
-        return;
-      }
-
-      fetch(`${API_BASE_URL}/api/experiments/${experimentId}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variationName: this._decision })
-      })
-        .then(r => r.json())
-        .then(d => console.log('A/B Agent: Feedback recorded ✅', d))
-        .catch(e => console.error('A/B Agent: Error sending feedback ❌', e));
+      makeDebugOverlay('Decision fetch error');
     }
-  };
+  })();
 
 })();
