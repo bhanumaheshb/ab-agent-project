@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  
-  baseURL: 'https://backend-service-0d12.onrender.com/api', 
-  // ---------------------
+  baseURL: 'https://backend-service-0d12.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -53,7 +51,6 @@ const createExperiment = (data) => {
 const getExperimentStats = (id) => {
   return apiClient.get(`/experiments/${id}/stats`);
 };
-
 
 // --- Admin Routes ---
 const getAdminUsers = () => {
