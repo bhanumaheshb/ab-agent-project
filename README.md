@@ -1,77 +1,177 @@
-# A/B Testing Agent 🚀
+🚀 A/B Testing Agent
 
-A full-stack, AI-powered A/B testing platform built as a SaaS (Software as a Service) application for digital marketing agencies.
+An AI-powered A/B Testing SaaS platform designed for digital marketing agencies to maximize conversions intelligently.
 
-This platform goes beyond traditional 50/50 split testing by using a **Multi-Armed Bandit (Thompson Sampling) algorithm**. This allows the agent to dynamically allocate more traffic to the "winning" variation in real-time, minimizing wasted ad spend and maximizing conversions for clients.
+This platform goes beyond traditional 50/50 split testing by using a Multi-Armed Bandit (Thompson Sampling) algorithm to dynamically allocate more traffic to the best-performing variation — minimizing wasted ad spend and maximizing ROI.
 
-**Live Demo URL:** `https://tangerine-lily-5aaf71.netlify.app`
+🌐 Live Demo: https://tangerine-lily-5aaf71.netlify.app
 
----
+✨ Features
+🧠 Intelligent A/B Testing
 
-## ✨ Core Features
+Uses Thompson Sampling (via jStat) for adaptive variation selection.
 
-* **Multi-Tenant Agency Dashboard:** Agencies can sign up for an account and manage multiple clients, each as a separate, secure "Project".
-* **Dynamic A/B Testing:** Uses a Thompson Sampling algorithm (via `jstat`) to intelligently decide which variation to show.
-* **Real-time Analytics:** A rich dashboard for each experiment, showing:
-    * A "Winner" banner for the best-performing variation.
-    * Side-by-side summary cards for Total Traffic, Total Conversions, and Overall Rate.
-    * A bar chart for visual comparison of conversion rates.
-    * A line graph to track "Performance Over Time."
-    * A detailed report table with raw numbers.
-* **Secure Authentication:** Full user signup, login, and stateless authentication using JSON Web Tokens (JWT).
-* **Admin Dashboard:** A private, admin-only section to view all registered users and projects in the system.
-* **Simple Client-Side Setup:** Customers just copy/paste a single `<script>` tag to install the agent on their website.
+Continuously learns from live data to prioritize winning variants in real-time.
 
----
+🧩 Multi-Tenant Architecture
 
-## 🏗️ Architecture & Tech Stack
+Agencies can manage multiple clients/projects within one secure account.
 
-This project is built with a modern microservice-inspired architecture, deployed on a blazing-fast, serverless infrastructure.
+Each project is fully isolated using a tenant-aware data model.
 
-* **Frontend (Dashboard):**
-    * **Framework:** React
-    * **Styling:** Tailwind CSS
-    * **Routing:** React Router
-    * **Charts:** Chart.js
-    * **Deployment:** Netlify
+📊 Real-Time Analytics Dashboard
 
-* **Backend (API & "Brain"):**
-    * **Framework:** Node.js & Express
-    * **Database:** MongoDB Atlas (using Mongoose)
-    * **Authentication:** JSON Web Tokens (JWT) & bcrypt
-    * **AI/ML:** Thompson Sampling logic implemented in JavaScript using **jStat**.
-    * **Deployment:** Render
+"Winner" banner for top-performing variation.
 
-* **Agent (`agent.js`):**
-    * A lightweight, vanilla JavaScript file served by the backend. It runs on the end-user's site, communicates with the API, and performs dynamic content changes.
+Summary cards for Total Traffic, Conversions, and Conversion Rate.
 
----
+Bar chart for comparing conversion rates.
 
-## ⚙️ Getting Started
+Line chart to visualize performance trends over time.
 
-To run this project on your local machine, you will need to run all three services in separate terminals.
+Detailed report table for raw experiment data.
 
-### 1. Prerequisites
+🔐 Authentication & Security
 
-* Node.js (v18+)
-* npm
-* A MongoDB Atlas account (or local MongoDB server)
+User registration and login with JWT-based stateless authentication.
 
-### 2. Backend Setup
+Password encryption with bcrypt.
 
-The backend server handles all API logic, authentication, and database connections.
+Admin-only dashboard to manage all users and projects.
 
-```bash
+💡 Simple Client Integration
+
+Clients can install the testing agent by adding a single <script> tag:
+
+<script async src="https://backend-service-url.com/agent.js" data-exp-id="YOUR_EXPERIMENT_ID"></script>
+
+
+The agent.js script automatically handles variation assignment, tracking, and data sync with the backend.
+
+🏗️ Architecture & Tech Stack
+Frontend (Dashboard)
+
+Framework: React
+
+Styling: Tailwind CSS
+
+Routing: React Router
+
+Charts: Chart.js
+
+Deployment: Netlify
+
+Backend (API & Logic Layer)
+
+Framework: Node.js & Express
+
+Database: MongoDB Atlas (via Mongoose)
+
+Authentication: JWT & bcrypt
+
+Algorithm: Thompson Sampling implemented using jStat
+
+Deployment: Render
+
+Agent (Client Script)
+
+Lightweight vanilla JavaScript file served by the backend.
+
+Communicates with the API to fetch variations and send conversion data.
+
+⚙️ Getting Started (Local Setup)
+
+Follow these steps to run the project locally.
+
+1️⃣ Prerequisites
+
+Make sure you have:
+
+Node.js (v18+)
+
+npm
+
+A MongoDB Atlas account (or local MongoDB server)
+
+2️⃣ Backend Setup
 # 1. Go to the backend folder
 cd backend
 
 # 2. Install dependencies
 npm install
 
-# 3. Create a .env file in the /backend folder
-#    (See .env.example)
-#    You must add your MONGODB_URI and JWT_SECRET
-touch .env
+# 3. Create an .env file in the backend folder (refer to .env.example)
+# Required environment variables:
+# MONGODB_URI=your_mongodb_connection_string
+# JWT_SECRET=your_secret_key
 
-# 4. Run the server
+# 4. Start the backend server
 npm run dev
+
+3️⃣ Frontend Setup
+# 1. Go to the frontend folder
+cd frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Run the development server
+npm run dev
+
+4️⃣ Access the App
+
+Once both servers are running:
+
+Frontend: http://localhost:5173 (default Vite port)
+
+Backend: http://localhost:5000 (or the port set in your .env)
+
+🧮 Algorithm Overview — Thompson Sampling
+
+The Thompson Sampling algorithm dynamically balances exploration and exploitation.
+Each time a visitor arrives:
+
+A random beta distribution sample is drawn for each variation.
+
+The variation with the highest sample value is displayed.
+
+Conversion results are fed back to update the beta parameters.
+
+Over time, the algorithm converges to the best-performing variation.
+
+🧑‍💼 Admin Features
+
+View all registered users and projects.
+
+Monitor performance across multiple agencies.
+
+Manage authentication and data securely.
+
+🚀 Deployment
+
+Frontend: Deployed via Netlify
+
+Backend: Hosted on Render
+
+Database: MongoDB Atlas (Cloud Database)
+
+🧰 Tech Summary
+Layer	Technology
+Frontend	React, Tailwind CSS, Chart.js
+Backend	Node.js, Express, jStat
+Database	MongoDB Atlas
+Auth	JWT, bcrypt
+Deployment	Netlify, Render
+AI/ML	Thompson Sampling
+📄 License
+
+This project is released under the MIT License — free to use, modify, and distribute.
+
+👨‍💻 Author
+
+Bhanu Mahesh
+Machine Learning & AI |Full-Stack Developer | Data Science & AI | NLP & ML Engineer | 
+📧 Contact
+
+🌐 Portfolio/LinkedIn
+https://www.linkedin.com/in/bhanu-mahesh-bathula-559275256/
