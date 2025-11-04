@@ -35,10 +35,7 @@ function SignupPage() {
             alt="A/B testing concept with charts" 
             className="w-full h-full object-cover rounded-l-2xl md:h-auto" 
           />
-          {/* 
-
-[Image of abstract data visualization]
- */}
+          {/*  */}
         </div>
         
         {/* --- Right Side (Form) --- */}
@@ -81,6 +78,9 @@ function SignupPage() {
                 type="password"
                 id="password"
                 value={password}
+                // --- THIS WAS THE MISSING LINE ---
+                onChange={(e) => setPassword(e.target.value)}
+                // ---------------------------------
                 required
                 className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
