@@ -24,76 +24,136 @@ if (!process.env.MONGODB_URI) {
 }
 
 /**
- * Trust proxy if behind Render / Netlify / other proxies
- * Use 1 if you are behind a single proxy (common on Render)
+ * Trust proxy if behind Render / Netlify / Vercel
  */
 if (process.env.TRUST_PROXY === '1') {
   app.set('trust proxy', 1);
 }
 
 /**
- * Production origin(s)
- * Put your production origin in .env for flexible deployments:
- *   PROD_ORIGIN=https://tangerine-lily-5aaf71.netlify.app
+ * Updated production origin (your new frontend)
  */
-const prodOrigin = process.env.PROD_ORIGIN || 'https://tangerine-lily-5aaf71.netlify.app';
+const prodOrigin = process.env.PROD_ORIGIN || 'https://ab-agent-project.vercel.app';
+
+/**
+ * Netlify preview regex example (keep if you ever use Netlify)
+ */
 const deployPreviewRegex = /^https:\/\/([a-z0-9\-]+)--tangerine-lily-5aaf71\.netlify\.app$/;
 
 /**
- * Allowed origins
- * - Allows any localhost port via regex (http)
- * - Keeps previously allowed dev ports and production origins
+ * Utility: parse EXTRA_ALLOWED_ORIGINS from .env (comma-separated)
  */
-const allowedOrigins = [
-  /^https?:\/\/localhost(?::\d+)?$/,  // allow any localhost port (http)
+const parseExtraOrigins = (csv) => {
+  if (!csv) return [];
+  return csv.split(',').map(s => s.trim()).filter(Boolean);
+};
+const extraOrigins = parseExtraOrigins(process.env.EXTRA_ALLOWED_ORIGINS);
+
+/**
+ * Hosted origin patterns — includes major hosts + Google + Vercel + your prod link
+ */
+const hostedOriginPatterns = [
+  // Local dev
+  /^https?:\/\/localhost(?::\d+)?$/,
   'http://localhost:5173',
   'http://localhost:3000',
+
+  // Your new production frontend
   prodOrigin,
+
+  // Vercel (production + preview)
+  /^https?:\/\/([a-z0-9-]+\.)?vercel\.app$/,
+  /^https?:\/\/([a-z0-9-]+\.)?vercel\.dev$/,
+  /^https:\/\/ab-agent-project\.vercel\.app$/, // explicitly added
+
+  // Netlify (if used)
+  /^https?:\/\/([a-z0-9-]+\.)?netlify\.app$/,
+  /^https?:\/\/([a-z0-9-]+\.)?netlify\.com$/,
   deployPreviewRegex,
+
+  // GitHub Pages
+  /^https?:\/\/([a-z0-9-]+\.)?github\.io$/,
+
+  // Firebase / web.app
+  /^https?:\/\/([a-z0-9-]+\.)?firebaseapp\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?web\.app$/,
+
+  // AWS / CloudFront
+  /^https?:\/\/([a-z0-9-]+\.)?s3\.amazonaws\.com/,
+  /^https?:\/\/([a-z0-9-]+\.)?cloudfront\.net/,
+  /^https?:\/\/([a-z0-9-]+\.)?amazonaws\.com/,
+
+  // Surge / Cloudflare Pages / Render / Fly.io
+  /^https?:\/\/([a-z0-9-]+\.)?surge\.sh$/,
+  /^https?:\/\/([a-z0-9-]+\.)?pages\.dev$/,
+  /^https?:\/\/([a-z0-9-]+\.)?herokuapp\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?render\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?fly\.io$/,
+
+  // --- Google-hosted ---
+  /^https?:\/\/[a-z0-9-]+\.appspot\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?googleusercontent\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?googleapis\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?gstatic\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?storage\.googleapis\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?blogspot\.com$/,
+  /^https?:\/\/accounts\.google\.com$/,
+  /^https?:\/\/([a-z0-9-]+\.)?google\.com$/,
 ];
+
+// Merge extra origins from .env if any
+for (const orig of extraOrigins) {
+  if (orig.startsWith('/') && orig.endsWith('/')) {
+    try {
+      const body = orig.slice(1, -1);
+      hostedOriginPatterns.push(new RegExp(body));
+    } catch {
+      console.warn('Invalid regex in EXTRA_ALLOWED_ORIGINS, ignoring:', orig);
+    }
+  } else {
+    hostedOriginPatterns.push(orig);
+  }
+}
 
 /**
  * CORS options
- * - Uses a RegExp-aware check
- * - Allows non-browser server-to-server calls where origin is undefined
- * - (Optional) special-case for "null" while debugging local file:// testing, gated by ALLOW_NULL_ORIGIN
  */
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow non-browser requests (curl/postman/server-to-server) which send no Origin header
     if (!origin) return callback(null, true);
 
-    // NOTE: origin === 'null' occurs when page is loaded from file:// — avoid relying on this in production.
     if (origin === 'null' && process.env.ALLOW_NULL_ORIGIN === '1') {
-      console.warn('Allowing null origin for local file:// testing (ALLOWED via ALLOW_NULL_ORIGIN=1)');
+      console.warn('Allowing null origin for local file:// testing (ALLOW_NULL_ORIGIN=1)');
       return callback(null, true);
     }
 
-    const allowed = allowedOrigins.some(o =>
+    if (process.env.ALLOW_ALL_HOSTED_ORIGINS === '1') {
+      if (/^https?:\/\//.test(origin)) return callback(null, true);
+      return callback(new Error('Invalid origin scheme'));
+    }
+
+    const allowed = hostedOriginPatterns.some(o =>
       typeof o === 'string' ? o === origin : o.test(origin)
     );
 
     if (allowed) return callback(null, true);
 
-    console.error('CORS Error: This origin is not allowed:', origin);
+    console.error('❌ CORS blocked origin:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   optionsSuccessStatus: 200,
-  credentials: false // set true only if you need cookies
+  credentials: false
 };
 
-// Middleware: security, logging, parsing
+// Middleware
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
-// IMPORTANT: register CORS before routes so preflight and CORS headers are applied
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // preflight handler
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Temporary request logger to help debug origins — remove in production if verbose
 if (process.env.REQUEST_LOG === '1') {
   app.use((req, res, next) => {
     console.log('[REQUEST]', req.method, req.originalUrl, 'Origin:', req.get('origin'));
@@ -101,19 +161,16 @@ if (process.env.REQUEST_LOG === '1') {
   });
 }
 
-// Serve static files from public (agent.js should live here)
+// Serve static files (for agent.js)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- API Routes (registered after CORS middleware) ---
+// API routes
 app.use('/api/experiments', experimentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 
-/**
- * Serve agent.js explicitly with correct content-type and CORS headers.
- * This is optional if agent.js lives in /public, but explicit route gives control.
- */
+// Serve agent.js explicitly with correct CORS headers
 app.get('/agent.js', cors(corsOptions), (req, res) => {
   const filePath = path.join(__dirname, 'public', 'agent.js');
   res.type('application/javascript');
@@ -125,18 +182,16 @@ app.get('/agent.js', cors(corsOptions), (req, res) => {
   });
 });
 
-// Centralized error handler (JSON)
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err && err.message ? err.message : err);
-  const status = err && err.status ? err.status : 500;
-  // If CORS error, you might prefer to send 403
-  if (err && err.message && err.message.includes('Not allowed by CORS')) {
+  console.error('[ERROR]', err.message || err);
+  if (err.message && err.message.includes('CORS')) {
     return res.status(403).json({ error: 'CORS Error: Origin not allowed' });
   }
-  res.status(status).json({ error: err.message || 'Server Error' });
+  res.status(500).json({ error: err.message || 'Server Error' });
 });
 
-/** Connect to DB and start server */
+// MongoDB + server start
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -144,7 +199,8 @@ mongoose.connect(process.env.MONGODB_URI, {
   .then(() => {
     console.log('✅ Connected to MongoDB');
     app.listen(PORT, () => {
-      console.log(`🚀 Backend server is running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 Allowed frontend: ${prodOrigin}`);
     });
   })
   .catch(err => {
