@@ -1,177 +1,245 @@
 🚀 A/B Testing Agent
 
-An AI-powered A/B Testing SaaS platform designed for digital marketing agencies to maximize conversions intelligently.
+AI-Powered Conversion Optimization as a Service (SaaS)
 
-This platform goes beyond traditional 50/50 split testing by using a Multi-Armed Bandit (Thompson Sampling) algorithm to dynamically allocate more traffic to the best-performing variation — minimizing wasted ad spend and maximizing ROI.
+A full-stack, AI-driven platform for digital marketing agencies to automate, manage, and optimize A/B testing campaigns with real-time intelligence using the Thompson Sampling algorithm.
 
-🌐 Live Demo: https://tangerine-lily-5aaf71.netlify.app
+🧠 Project Purpose
 
-✨ Features
-🧠 Intelligent A/B Testing
+To build a full-stack, AI-powered A/B Testing Platform offered as a SaaS application for digital marketing agencies.
+Traditional A/B testing splits traffic 50/50, wasting budget and time. This agent dynamically reallocates traffic toward the better-performing variation in real time, achieving faster and more profitable results.
 
-Uses Thompson Sampling (via jStat) for adaptive variation selection.
+🌟 Core Features
+🏢 Multi-Tenant Agency System
 
-Continuously learns from live data to prioritize winning variants in real-time.
+Full authentication system for agencies (users) to sign up, log in, and manage multiple client "Projects."
 
-🧩 Multi-Tenant Architecture
+Each user’s data is isolated — agencies can only view and manage their own projects.
 
-Agencies can manage multiple clients/projects within one secure account.
+🧰 Secure, Project-Based Dashboard
 
-Each project is fully isolated using a tenant-aware data model.
+Each agency sees only their associated projects and experiments.
+
+Data isolation implemented at the API level for enhanced security.
+
+🧪 Experiment Management
+
+Full CRUD operations for A/B test management.
+
+Example: “Blue Button” vs “Green Button”, “100kg” vs “200kg” variations.
+
+💡 Dynamic Client-Side Agent
+
+A single <script> tag that customers paste onto their websites.
+
+This agent fetches the best-performing variation from the backend in real time.
 
 📊 Real-Time Analytics Dashboard
 
-"Winner" banner for top-performing variation.
+Winner Banner: Displays top-performing variation.
 
-Summary cards for Total Traffic, Conversions, and Conversion Rate.
+Summary Cards: Shows Total Traffic, Total Conversions, and Overall Conversion Rate.
 
-Bar chart for comparing conversion rates.
+Bar Chart: Variation performance comparison.
 
-Line chart to visualize performance trends over time.
+Line Graph: Daily conversion rate trends.
 
-Detailed report table for raw experiment data.
+Detailed Report Table: Raw experiment stats (trials, successes, conversion rates).
 
-🔐 Authentication & Security
+🛡️ Admin Dashboard
 
-User registration and login with JWT-based stateless authentication.
+Admin-only section (secured via isAdmin: true flag in the database).
 
-Password encryption with bcrypt.
+View all registered users and projects platform-wide.
 
-Admin-only dashboard to manage all users and projects.
+📱 Responsive, Mobile-First Design
 
-💡 Simple Client Integration
+Sidebar collapses into a hamburger menu on mobile.
 
-Clients can install the testing agent by adding a single <script> tag:
+Built with Tailwind CSS for clean, modern, and adaptive UI.
 
-<script async src="https://backend-service-url.com/agent.js" data-exp-id="YOUR_EXPERIMENT_ID"></script>
+⚙️ Technology Stack
+Category	Technology	Key Libraries / Tools
+Frontend	React	Vite, React Router, Tailwind CSS, Chart.js, Heroicons, Axios
+Backend	Node.js	Express, Mongoose, JWT, bcryptjs, jStat (ML), cors, helmet, morgan
+Database	NoSQL	MongoDB Atlas
+Deployment / CI-CD	Git, GitHub	Render (Backend), Vercel (Frontend)
+🧮 ML / AI Component — The "Brain"
 
+Goal: Implement a Multi-Armed Bandit (MAB) algorithm to power intelligent traffic allocation.
 
-The agent.js script automatically handles variation assignment, tracking, and data sync with the backend.
+Algorithm: Thompson Sampling
+Implementation Steps:
 
-🏗️ Architecture & Tech Stack
-Frontend (Dashboard)
+Initially implemented as a Python microservice using FastAPI and NumPy (np.random.beta).
 
-Framework: React
+Diagnosed a 429 Too Many Requests issue between Render microservices.
 
-Styling: Tailwind CSS
+Pivoted to JavaScript: Rewrote ML logic in Node.js using jStat.beta.sample.
 
-Routing: React Router
+Fully integrated Thompson Sampling into the backend for real-time decision-making.
 
-Charts: Chart.js
+Result:
+The platform can make data-driven allocation decisions without needing separate ML services.
 
-Deployment: Netlify
+🧩 Backend — The "Manager"
+🗃️ Database Design
 
-Backend (API & Logic Layer)
+Created 4 Mongoose Schemas:
 
-Framework: Node.js & Express
+User: Agency accounts and admin role flag.
 
-Database: MongoDB Atlas (via Mongoose)
+Project: Client-level containers for experiments.
 
-Authentication: JWT & bcrypt
+Experiment: Stores variations, conversions, and statistics.
 
-Algorithm: Thompson Sampling implemented using jStat
+DailyStat: Logs daily conversion rate trends for graphing.
 
-Deployment: Render
+🔐 Security & API
 
-Agent (Client Script)
+JWT-based authentication and authorization.
 
-Lightweight vanilla JavaScript file served by the backend.
+Password hashing using bcryptjs (one-way encryption).
 
-Communicates with the API to fetch variations and send conversion data.
+Middleware authMiddleware.js ensures data isolation by user ID.
 
-⚙️ Getting Started (Local Setup)
+Secure REST API architecture using Express.js.
 
-Follow these steps to run the project locally.
+⚙️ Business Logic
 
-1️⃣ Prerequisites
+The experimentController.js:
 
-Make sure you have:
+Receives experiment requests from the client <script> tag.
 
-Node.js (v18+)
+Runs the Thompson Sampling (jStat) function to decide variation.
 
-npm
+Updates:
 
-A MongoDB Atlas account (or local MongoDB server)
+Experiment stats: Trials, successes.
 
-2️⃣ Backend Setup
-# 1. Go to the backend folder
-cd backend
+Daily stats: For trend visualization.
 
-# 2. Install dependencies
-npm install
+Returns variation data to the browser for rendering.
 
-# 3. Create an .env file in the backend folder (refer to .env.example)
-# Required environment variables:
-# MONGODB_URI=your_mongodb_connection_string
-# JWT_SECRET=your_secret_key
+👑 Admin Panel
 
-# 4. Start the backend server
-npm run dev
+Added isAdmin flag to User schema.
 
-3️⃣ Frontend Setup
-# 1. Go to the frontend folder
-cd frontend
+adminController.js + adminRoutes.js handle secure admin-only routes.
 
-# 2. Install dependencies
-npm install
+Admins can view all users and projects across the platform.
 
-# 3. Run the development server
-npm run dev
+💻 Frontend — The "Dashboard"
+⚙️ Framework & Styling
 
-4️⃣ Access the App
+Built with React + Vite for lightning-fast development.
 
-Once both servers are running:
+Styled entirely with Tailwind CSS for a modern, responsive look.
 
-Frontend: http://localhost:5173 (default Vite port)
+🔐 State & Routing
 
-Backend: http://localhost:5000 (or the port set in your .env)
+Global auth state via React Context API (AuthContext.jsx).
 
-🧮 Algorithm Overview — Thompson Sampling
+Routing powered by React Router:
 
-The Thompson Sampling algorithm dynamically balances exploration and exploitation.
-Each time a visitor arrives:
+Public pages: Login, Signup.
 
-A random beta distribution sample is drawn for each variation.
+Protected routes: Dashboard, Projects, Experiments.
 
-The variation with the highest sample value is displayed.
+Admin-only routes: Admin Panel.
 
-Conversion results are fed back to update the beta parameters.
+📊 Data Visualization
 
-Over time, the algorithm converges to the best-performing variation.
+Built with Chart.js:
 
-🧑‍💼 Admin Features
+Bar Chart: Variation Performance.
 
-View all registered users and projects.
+Line Graph: Performance Over Time.
 
-Monitor performance across multiple agencies.
+Summary Cards: Key metrics.
 
-Manage authentication and data securely.
+Winner Banner: Highlights top variation.
 
-🚀 Deployment
+Setup Page: Dynamic auto-generated code snippet for customers.
 
-Frontend: Deployed via Netlify
+🚀 Deployment & Debugging
+🧭 Version Control
 
-Backend: Hosted on Render
+Full Git repository with commits for each milestone.
 
-Database: MongoDB Atlas (Cloud Database)
+Hosted on GitHub for CI/CD integration.
 
-🧰 Tech Summary
-Layer	Technology
-Frontend	React, Tailwind CSS, Chart.js
-Backend	Node.js, Express, jStat
-Database	MongoDB Atlas
-Auth	JWT, bcrypt
-Deployment	Netlify, Render
-AI/ML	Thompson Sampling
-📄 License
+🌐 Backend Deployment (Render)
 
-This project is released under the MIT License — free to use, modify, and distribute.
+Hosted Node.js backend on Render.
 
-👨‍💻 Author
+Configured environment variables:
 
-Bhanu Mahesh
-Machine Learning & AI |Full-Stack Developer | Data Science & AI | NLP & ML Engineer | 
-📧 Contact
+MONGODB_URI
 
-🌐 Portfolio/LinkedIn
-https://www.linkedin.com/in/bhanu-mahesh-bathula-559275256/
+JWT_SECRET
+
+Debugged and resolved “spin-down” & 429 rate limit issues.
+
+💻 Frontend Deployment (Vercel)
+
+Initially deployed to Netlify, later migrated to Vercel for reliability and speed.
+
+Integrated continuous deployment from GitHub.
+
+🔧 CORS Debugging
+
+Fixed major CORS issues by dynamically whitelisting allowed origins (Vercel + localhost) in backend/index.js.
+
+🧪 Local Testing
+
+Simulated client websites using local static servers (serve / python3 -m http.server).
+
+Tested the full request flow of the client <script> to backend and back.
+
+🗺️ Folder Structure (Simplified)
+A-B-Testing-Agent/
+│
+├── backend/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── utils/
+│   ├── index.js
+│   └── app.js
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── context/
+│   │   ├── services/
+│   │   └── App.jsx
+│   └── vite.config.js
+│
+└── agent/
+    └── agent.js
+
+🔮 Future Roadmap
+
+💳 Subscription Management: Integrate Stripe for Pro/Enterprise billing.
+
+🔑 Forgot Password Workflow: Secure email-based reset (SendGrid/Nodemailer).
+
+⏸️ Experiment Controls: Pause/End test manually.
+
+🌍 Custom Domain Mapping: Enable agency-specific subdomains.
+
+📈 Enhanced Analytics: Add deeper conversion funnel metrics.
+
+🧑‍💻 Author
+
+Name: [Bhanu Mahesh B]
+GitHub: [Your GitHub Link]
+Live Demo: https://ab-agent-project.vercel.app
+
+✅ This project demonstrates the ability to design, develop, secure, and deploy a full-stack AI-powered SaaS platform integrating ML, analytics, and user management in production.
+
+
+
+
