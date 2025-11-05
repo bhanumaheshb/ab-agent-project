@@ -1,0 +1,34 @@
+/* AppWhite.css */
+/* Shared styles for professional white dashboard pages */
+
+.page-container {
+  background: linear-gradient(135deg, #f7f9fc, #edf2f7);
+  min-height: 100vh;
+  color: #1e293b;
+  padding: 2rem;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.section-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+}
