@@ -55,11 +55,10 @@ const extraOrigins = parseExtraOrigins(process.env.EXTRA_ALLOWED_ORIGINS);
 const hostedOriginPatterns = [
   // Local dev
   /^https?:\/\/localhost(?::\d+)?$/,
-  /^https?:\/\/127\.0\.0\.1(?::\d+)?$/, 
+  /^https?:\/\/127\.0\.0\.1(?::\d+)?$/,
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:8001',
-  
 
   // Your new production frontend
   prodOrigin,
@@ -136,9 +135,11 @@ const corsOptions = {
       return callback(new Error('Invalid origin scheme'));
     }
 
-    const allowed = hostedOriginPatterns.some(o =>
-      typeof o === 'string' ? o === origin : o.test(origin)
-    );
+    const allowed = hostedOriginPatterns.some(o => {
+      if (typeof o === 'string') return o === origin;
+      if (o instanceof RegExp) return o.test(origin);
+      return false;
+    });
 
     if (allowed) return callback(null, true);
 
@@ -154,7 +155,6 @@ app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -165,7 +165,16 @@ if (process.env.REQUEST_LOG === '1') {
   });
 }
 
-// Serve static files (for agent.js)
+// Health route to avoid 404 on root
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'ab-agent-backend',
+    time: new Date().toISOString(),
+  });
+});
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
@@ -174,32 +183,57 @@ app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Serve agent.js explicitly with correct CORS headers
+/**
+ * Serve agent.js with safe relaxed headers
+ */
 app.get('/agent.js', cors(corsOptions), (req, res) => {
   const filePath = path.join(__dirname, 'public', 'agent.js');
+  const reqOrigin = req.get('origin');
+
+  if (reqOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Vary', 'Origin');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+
+  const allowedScriptSrc = [
+    "'self'",
+    "'unsafe-inline'",
+    prodOrigin,
+    'https://backend-service-0d12.onrender.com',
+    'http://127.0.0.1:8001'
+  ].join(' ');
+
+  res.setHeader(
+    'Content-Security-Policy',
+    `default-src 'self'; script-src ${allowedScriptSrc}; connect-src 'self' https://backend-service-0d12.onrender.com ${prodOrigin}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none';`
+  );
+
   res.type('application/javascript');
   res.sendFile(filePath, err => {
     if (err) {
       console.error('Error sending agent.js:', err);
-      res.sendStatus(500);
+      try { res.sendStatus(500); } catch (e) {}
     }
   });
 });
 
-// Error handler
+// Centralized error handler
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.message || err);
+  const status = err.status || 500;
   if (err.message && err.message.includes('CORS')) {
     return res.status(403).json({ error: 'CORS Error: Origin not allowed' });
   }
-  res.status(500).json({ error: err.message || 'Server Error' });
+  res.status(status).json({ error: err.message || 'Server Error' });
 });
 
-// MongoDB + server start
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+/** ✅ Clean modern MongoDB connect + health message */
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
     app.listen(PORT, () => {
