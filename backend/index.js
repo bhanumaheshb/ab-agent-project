@@ -55,6 +55,7 @@ const extraOrigins = parseExtraOrigins(process.env.EXTRA_ALLOWED_ORIGINS);
 const hostedOriginPatterns = [
   // Local dev
   /^https?:\/\/localhost(?::\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(?::\d+)?$/, 
   'http://localhost:5173',
   'http://localhost:3000',
 
@@ -77,6 +78,7 @@ const hostedOriginPatterns = [
   // Firebase / web.app
   /^https?:\/\/([a-z0-9-]+\.)?firebaseapp\.com$/,
   /^https?:\/\/([a-z0-9-]+\.)?web\.app$/,
+  'https://6000-firebase-studio-1762339781050.cluster-44kx2eiocbhe2tyk3zoyo3ryuo.cloudworkstations.dev',
 
   // AWS / CloudFront
   /^https?:\/\/([a-z0-9-]+\.)?s3\.amazonaws\.com/,
