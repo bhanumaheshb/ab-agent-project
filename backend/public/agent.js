@@ -1,6 +1,12 @@
 // public/agent.js (copy & replace)
 (function () {
-  const scriptTag = document.currentScript;
+  // Grab current script tag (supports inline <script> and external script file)
+  const scriptTag = document.currentScript || (function () {
+    // fallback: last script element on the page
+    const scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })();
+
   const experimentId = scriptTag && scriptTag.getAttribute && scriptTag.getAttribute('data-exp-id');
 
   if (!experimentId) {
@@ -8,13 +14,31 @@
     return;
   }
 
-  const API_BASE_URL = 'https://backend-service-0d12.onrender.com';
+  // API base: prefer explicit data-api-base, otherwise use the origin that served this script
+  const apiBaseFromAttr = scriptTag && scriptTag.getAttribute && scriptTag.getAttribute('data-api-base');
+  let API_BASE_URL;
+  try {
+    if (apiBaseFromAttr) {
+      API_BASE_URL = apiBaseFromAttr.replace(/\/+$/, ''); // trim trailing slash
+    } else if (scriptTag && scriptTag.src) {
+      API_BASE_URL = (new URL(scriptTag.src)).origin;
+    } else {
+      // fallback to current page origin
+      API_BASE_URL = window.location.origin;
+    }
+  } catch (e) {
+    API_BASE_URL = window.location.origin;
+  }
+
+  const DEBUG = (scriptTag && scriptTag.getAttribute && scriptTag.getAttribute('data-debug')) === '1';
 
   const debugLog = (...args) => {
+    if (!DEBUG) return;
     try { console.log.apply(console, ['A/B Agent:'].concat(args)); } catch (e) {}
   };
 
   const makeDebugOverlay = (text) => {
+    if (!DEBUG) return;
     try {
       let el = document.getElementById('__ab_agent_debug');
       if (!el) {
@@ -78,32 +102,48 @@
         return this._decision;
       },
 
+      /**
+       * Send feedback (conversion). `extra` can include additional metadata (userId, value, etc.)
+       * Example: window.ABAgent.track({ value: 199, userId: 'abc' })
+       */
       async track(extra = {}) {
         if (!this._decision) {
           console.warn('A/B Agent: No decision recorded yet. Call track() after a decision is present.');
           return;
         }
         const payload = Object.assign({ variationName: this._decision }, extra);
+
+        const url = `${API_BASE_URL}/api/experiments/${encodeURIComponent(experimentId)}/feedback`;
+
         try {
-          debugLog('Sending feedback', payload);
-          const res = await fetch(`${API_BASE_URL}/api/experiments/${experimentId}/feedback`, {
+          debugLog('Sending feedback', url, payload);
+          const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(payload),
+            // credentials: 'omit' by default; change to 'include' if you use cookies
           });
+
           if (!res.ok) {
-            const text = await res.text();
+            const text = await res.text().catch(() => '');
             console.error('A/B Agent: Feedback failed ->', res.status, text);
+            makeDebugOverlay('Feedback failed');
             return;
           }
-          const body = await res.json();
+
+          const body = await res.json().catch(() => ({}));
           debugLog('A/B Agent: Feedback recorded ✅', body);
           makeDebugOverlay('Feedback recorded');
         } catch (e) {
           console.error('A/B Agent: Error sending feedback ❌', e);
+          makeDebugOverlay('Feedback error');
         }
       },
 
+      /**
+       * ready(timeoutMs)
+       * resolves with decision string or rejects on timeout
+       */
       ready(timeoutMs = 5000) {
         const self = this;
         return new Promise((resolve, reject) => {
@@ -124,23 +164,29 @@
     };
   })();
 
-  // --- Fetch decision ---
+  // --- Fetch decision from backend ---
   (async function fetchDecision() {
+    const decisionUrl = `${API_BASE_URL}/api/experiments/${encodeURIComponent(experimentId)}/decision`;
+
     try {
-      debugLog('Fetching decision for experiment', experimentId);
-      const res = await fetch(`${API_BASE_URL}/api/experiments/${experimentId}/decision`, {
+      debugLog('Fetching decision for experiment', experimentId, 'from', API_BASE_URL);
+      makeDebugOverlay('Fetching decision...');
+
+      const res = await fetch(decisionUrl, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        // credentials: 'omit' by default
       });
 
       if (!res.ok) {
-        const txt = await res.text();
+        const txt = await res.text().catch(() => '');
         console.error('A/B Agent: Server Error ->', res.status, txt);
         makeDebugOverlay('Decision fetch failed: ' + res.status);
+        // set fallback decision to null (client will handle)
         return;
       }
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (data && data.decision) {
         try {
           window.ABAgent._setDecision(data.decision);
