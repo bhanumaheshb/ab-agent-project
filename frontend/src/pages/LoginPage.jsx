@@ -1,103 +1,104 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { BeakerIcon } from '@heroicons/react/24/solid';
+import './Auth.css';
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { BeakerIcon } from "@heroicons/react/24/solid";
+
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     try {
       await login(email, password);
-      navigate('/projects'); // Redirect to projects page on success
+      navigate("/projects");
     } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
+      setError("Failed to log in. Please check your credentials.");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      
-      {/* --- Main Card --- */}
-      <div className="relative flex flex-col bg-white shadow-2xl rounded-2xl md:flex-row">
-        
-        {/* --- Left Side (Image) --- */}
-        <div className="relative w-full md:w-1/2">
-          {/* You can replace this placeholder URL with any image you want.
-            Search "abstract technology" or "data analytics" on unsplash.com for great options.
-          */}
-          <img 
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1740&auto=format&fit=crop" 
-            alt="A/B testing concept with charts" 
-            className="w-full h-full object-cover rounded-l-2xl md:h-auto" 
-          />
-          {/* 
+    <div className="min-h-screen flex items-center justify-center auth-bg text-white px-4">
+  <div className="auth-card flex flex-col md:flex-row bg-slate-800/40 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 w-full max-w-5xl">
 
-[Image of data analytics dashboard]
- */}
+        {/* Left - Visual */}
+        <div className="hidden md:block md:w-1/2 bg-gradient-to-tr from-sky-500/40 to-sky-300/20 p-10">
+          <div className="flex flex-col h-full justify-center text-center">
+            <h2 className="text-3xl font-bold text-sky-300 mb-2">
+              Welcome Back!
+            </h2>
+            <p className="text-slate-300">
+              Log in to access your experiments, insights, and dashboards.
+            </p>
+            <img
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1600&auto=format&fit=crop"
+              alt="A/B testing visualization"
+              className="mt-8 rounded-2xl shadow-lg object-cover"
+            />
+          </div>
         </div>
-        
-        {/* --- Right Side (Form) --- */}
-        <div className="flex flex-col justify-center p-8 md:p-14 w-full md:w-1/2">
-          
-          <BeakerIcon className="mx-auto h-16 w-16 text-blue-600" />
-          
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+
+        {/* Right - Login Form */}
+        <div className="w-full md:w-1/2 p-10 md:p-14 flex flex-col justify-center">
+          <BeakerIcon className="h-14 w-14 mx-auto text-sky-400" />
+          <h2 className="text-3xl font-extrabold text-center mb-6">
             Agency Login
           </h2>
-          
-          {error && <p className="text-red-500 text-center font-medium mb-4">{error}</p>}
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+          {error && (
+            <p className="text-red-400 bg-red-900/30 py-2 px-3 rounded text-center mb-4">
+              {error}
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
+              <label className="block text-sm text-slate-300 mb-1">Email</label>
               <input
                 type="email"
-                id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm text-slate-300 mb-1">
                 Password
               </label>
               <input
                 type="password"
-                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
               />
             </div>
-            
-            <button 
-              type="submit" 
-              className="w-full py-3 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-900 font-semibold rounded-xl transition"
             >
               Log In
             </button>
-            
-            <p className="text-center text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+
+            <p className="text-center text-slate-400 text-sm mt-3">
+              Don’t have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-sky-400 hover:text-sky-300 font-medium"
+              >
                 Sign Up
               </Link>
             </p>
           </form>
         </div>
-        
       </div>
     </div>
   );
