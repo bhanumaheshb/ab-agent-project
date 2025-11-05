@@ -58,6 +58,8 @@ const hostedOriginPatterns = [
   /^https?:\/\/127\.0\.0\.1(?::\d+)?$/, 
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:8001',
+  
 
   // Your new production frontend
   prodOrigin,
