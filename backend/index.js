@@ -1,4 +1,4 @@
-// index.js
+// index.js (fixed + safer helmet + robust error handling)
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
@@ -31,7 +31,7 @@ if (process.env.TRUST_PROXY === '1') {
 }
 
 /**
- * Updated production origin (your new frontend)
+ * Production origin (your frontend)
  */
 const prodOrigin = process.env.PROD_ORIGIN || 'https://ab-agent-project.vercel.app';
 
@@ -51,6 +51,7 @@ const extraOrigins = parseExtraOrigins(process.env.EXTRA_ALLOWED_ORIGINS);
 
 /**
  * Hosted origin patterns — includes major hosts + Google + Vercel + your prod link
+ * (kept exactly as provided)
  */
 const hostedOriginPatterns = [
   // Local dev
@@ -66,7 +67,7 @@ const hostedOriginPatterns = [
   // Vercel (production + preview)
   /^https?:\/\/([a-z0-9-]+\.)?vercel\.app$/,
   /^https?:\/\/([a-z0-9-]+\.)?vercel\.dev$/,
-  /^https:\/\/ab-agent-project\.vercel\.app$/, // explicitly added
+  /^https:\/\/ab-agent-project\.vercel\.app$/,
 
   // Netlify (if used)
   /^https?:\/\/([a-z0-9-]+\.)?netlify\.app$/,
@@ -123,13 +124,16 @@ for (const orig of extraOrigins) {
  */
 const corsOptions = {
   origin: function (origin, callback) {
+    // allow non-browser requests (curl/postman/server-to-server) which send no Origin header
     if (!origin) return callback(null, true);
 
+    // allow file:// testing if enabled
     if (origin === 'null' && process.env.ALLOW_NULL_ORIGIN === '1') {
       console.warn('Allowing null origin for local file:// testing (ALLOW_NULL_ORIGIN=1)');
       return callback(null, true);
     }
 
+    // global allow toggle for dev only
     if (process.env.ALLOW_ALL_HOSTED_ORIGINS === '1') {
       if (/^https?:\/\//.test(origin)) return callback(null, true);
       return callback(new Error('Invalid origin scheme'));
@@ -150,14 +154,27 @@ const corsOptions = {
   credentials: false
 };
 
-// Middleware
-app.use(helmet());
+/**
+ * Use Helmet but disable global CSP/COOP/CORP that can block cross-origin script loads.
+ * We will set controlled headers only for /agent.js response.
+ *
+ * This keeps other Helmet protections but avoids the automatic CSP/COOP/CORP that caused blocking.
+ */
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false
+}));
+
+// Logging + CORS + body parsing
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Optional request logger (enable via env)
 if (process.env.REQUEST_LOG === '1') {
   app.use((req, res, next) => {
     console.log('[REQUEST]', req.method, req.originalUrl, 'Origin:', req.get('origin'));
@@ -165,16 +182,27 @@ if (process.env.REQUEST_LOG === '1') {
   });
 }
 
-// Health route to avoid 404 on root
-app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'ab-agent-backend',
-    time: new Date().toISOString(),
-  });
+/**
+ * Health / readiness endpoint (useful for Render / load balancers)
+ */
+app.get('/healthz', async (req, res) => {
+  try {
+    const mongoState = mongoose.connection.readyState; // 1 = connected
+    if (mongoState !== 1) {
+      return res.status(503).json({ status: 'fail', mongoState });
+    }
+    return res.status(200).json({ status: 'ok', time: new Date().toISOString(), mongoState });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', error: String(err) });
+  }
 });
 
-// Serve static files
+// Keep root friendly
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'ab-agent-backend', time: new Date().toISOString() });
+});
+
+// Serve static files (for agent.js and other public assets)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
@@ -184,7 +212,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 
 /**
- * Serve agent.js with safe relaxed headers
+ * Serve agent.js with safe relaxed headers (only for this file).
+ * This avoids global header changes and keeps it explicit and auditable.
  */
 app.get('/agent.js', cors(corsOptions), (req, res) => {
   const filePath = path.join(__dirname, 'public', 'agent.js');
@@ -194,12 +223,16 @@ app.get('/agent.js', cors(corsOptions), (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', reqOrigin);
     res.setHeader('Vary', 'Origin');
   } else {
+    // scripts often have no Origin header; allow by default for non-browser clients
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
+  // Allow cross-origin resource loading for this JS file
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  // Less strict COOP for embed/test scenarios
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
+  // Response-level CSP tailored for agent.js only (whitelist explicit origins)
   const allowedScriptSrc = [
     "'self'",
     "'unsafe-inline'",
@@ -214,7 +247,7 @@ app.get('/agent.js', cors(corsOptions), (req, res) => {
   );
 
   res.type('application/javascript');
-  res.sendFile(filePath, err => {
+  res.sendFile(filePath, (err) => {
     if (err) {
       console.error('Error sending agent.js:', err);
       try { res.sendStatus(500); } catch (e) {}
@@ -222,17 +255,28 @@ app.get('/agent.js', cors(corsOptions), (req, res) => {
   });
 });
 
-// Centralized error handler
+// Centralized JSON error handler
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.message || err);
-  const status = err.status || 500;
-  if (err.message && err.message.includes('CORS')) {
+  console.error('[ERROR]', err && err.message ? err.message : err);
+  const status = err && err.status ? err.status : 500;
+  if (err && err.message && err.message.includes('Not allowed by CORS')) {
     return res.status(403).json({ error: 'CORS Error: Origin not allowed' });
   }
   res.status(status).json({ error: err.message || 'Server Error' });
 });
 
-/** ✅ Clean modern MongoDB connect + health message */
+/**
+ * Improve stability: log uncaught errors and rejections so we can debug crashes.
+ * In production you might want to exit and restart — Render will restart on process exit.
+ */
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err && err.stack ? err.stack : err);
+});
+process.on('unhandledRejection', (reason, p) => {
+  console.error('UNHANDLED REJECTION at:', p, 'reason:', reason);
+});
+
+/** Connect to MongoDB and start server (modern connect without deprecated flags) */
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
@@ -241,7 +285,8 @@ mongoose.connect(process.env.MONGODB_URI)
       console.log(`🌐 Allowed frontend: ${prodOrigin}`);
     });
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('Database connection error:', err);
     process.exit(1);
   });
+
