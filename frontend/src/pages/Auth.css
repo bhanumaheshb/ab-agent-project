@@ -1,0 +1,41 @@
+/* Auth.css */
+/* This adds smooth fade-in, background animation, and optional glow */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.auth-bg {
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease infinite;
+}
+
+.auth-card {
+  animation: fadeIn 0.8s ease-out both;
+}
+
+/* Subtle hover glow on buttons */
+button:hover {
+  filter: brightness(1.1);
+  transition: filter 0.3s ease;
+}
