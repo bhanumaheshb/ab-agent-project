@@ -1,92 +1,124 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import api from '../services/api';
-import { PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
+import React, { useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import api from "../services/api";
+import {
+  PlusIcon,
+  TrashIcon,
+  ArrowLeftIcon,
+  BeakerIcon,
+} from "@heroicons/react/24/solid";
+import "./AppWhite.css";
 
 function CreateExperiment() {
-  const { projectId } = useParams(); // Get projectId from URL
-  const [name, setName] = useState('');
-  const [variations, setVariations] = useState([{ name: '' }, { name: '' }]);
+  const { projectId } = useParams();
+  const [name, setName] = useState("");
+  const [variations, setVariations] = useState([{ name: "" }, { name: "" }]);
   const navigate = useNavigate();
 
   const handleVariationChange = (index, event) => {
-    const values = [...variations];
-    values[index].name = event.target.value;
-    setVariations(values);
+    const updated = [...variations];
+    updated[index].name = event.target.value;
+    setVariations(updated);
   };
 
   const handleAddVariation = () => {
-    setVariations([...variations, { name: '' }]);
+    setVariations([...variations, { name: "" }]);
   };
 
   const handleRemoveVariation = (index) => {
     if (variations.length <= 2) return;
-    const values = [...variations];
-    values.splice(index, 1);
-    setVariations(values);
+    const updated = [...variations];
+    updated.splice(index, 1);
+    setVariations(updated);
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const filteredVariations = variations.filter(v => v.name.trim() !== '');
-    
-    if (name && filteredVariations.length >= 2 && projectId) {
-      // Send the projectId along with the rest of the data
-      api.createExperiment({ name, variations: filteredVariations, projectId })
-        .then(() => navigate(`/project/${projectId}`)) // Go back to project dashboard
-        .catch(error => console.error('Error creating experiment:', error));
-    } else {
-      alert('Please provide an experiment name and at least two variation names.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validVariations = variations.filter((v) => v.name.trim() !== "");
+
+    if (!name || validVariations.length < 2) {
+      alert("Please provide a name and at least two variations.");
+      return;
+    }
+
+    try {
+      await api.createExperiment({
+        name,
+        variations: validVariations,
+        projectId,
+      });
+      navigate(`/project/${projectId}`);
+    } catch (err) {
+      console.error("Error creating experiment:", err);
+      alert("Failed to create experiment. Try again.");
     }
   };
 
   return (
-    <>
-      <Link 
-        to={`/project/${projectId}`} 
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-4"
+    <div className="page-container">
+      {/* Back Link */}
+      <Link
+        to={`/project/${projectId}`}
+        className="flex items-center gap-2 text-sky-600 hover:text-sky-800 mb-6 font-medium"
       >
         <ArrowLeftIcon className="h-4 w-4" />
         Back to Project
       </Link>
-      
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-lg space-y-6">
-        <h2 className="text-3xl font-bold text-gray-800">Create New Experiment</h2>
-        
+
+      {/* Page Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <BeakerIcon className="h-10 w-10 text-sky-600" />
+        <h1 className="text-3xl font-bold text-gray-800">
+          Create New Experiment
+        </h1>
+      </div>
+
+      {/* Form Card */}
+      <form
+        onSubmit={handleSubmit}
+        className="card p-8 max-w-3xl mx-auto space-y-6"
+      >
+        {/* Experiment Name */}
         <div>
-          <label htmlFor="exp-name" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="exp-name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Experiment Name
           </label>
           <input
-            type="text"
             id="exp-name"
+            type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Button Color Test"
             required
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
           />
         </div>
 
+        {/* Variations Section */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Variations (at least 2)
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Variations <span className="text-gray-500">(at least 2)</span>
           </label>
           <div className="space-y-3">
-            {variations.map((variation, index) => (
+            {variations.map((v, index) => (
               <div key={index} className="flex items-center gap-3">
                 <input
                   type="text"
-                  placeholder={`Variation ${index + 1} Name`}
-                  value={variation.name}
-                  onChange={e => handleVariationChange(index, e)}
+                  placeholder={`Variation ${index + 1}`}
+                  value={v.name}
+                  onChange={(e) => handleVariationChange(index, e)}
                   required
-                  className="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-grow block px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
                 />
                 {index > 1 && (
                   <button
                     type="button"
                     onClick={() => handleRemoveVariation(index)}
-                    className="p-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                    className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm"
+                    title="Remove Variation"
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>
@@ -96,24 +128,26 @@ function CreateExperiment() {
           </div>
         </div>
 
-        <div className="flex gap-4">
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={handleAddVariation}
-            className="flex items-center gap-2 px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+            className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 shadow-sm"
           >
             <PlusIcon className="h-5 w-5" />
             Add Variation
           </button>
           <button
             type="submit"
-            className="px-6 py-2 text-white bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            className="flex items-center gap-2 px-6 py-2 bg-sky-600 text-white rounded-lg font-semibold hover:bg-sky-700 shadow-md"
           >
+            <BeakerIcon className="h-5 w-5" />
             Create Experiment
           </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 
