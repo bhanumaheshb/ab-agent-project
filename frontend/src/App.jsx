@@ -5,7 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 
 // --- Pages ---
-import Home from "./pages/Home"; // ✅ Public landing page
+import Home from "./pages/Home"; 
 import ProjectsPage from "./pages/ProjectsPage";
 import Dashboard from "./pages/Dashboard";
 import CreateExperiment from "./pages/CreateExperiment";
@@ -26,7 +26,8 @@ import {
 
 // --- Sidebar NavItem ---
 function NavItem({ to, icon: Icon, children }) {
-  const baseClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-gray-200";
+  const baseClasses =
+    "flex items-center gap-3 px-4 py-3 rounded-lg text-gray-200";
   const activeClasses = "bg-gray-700 font-semibold text-white";
   const inactiveClasses = "hover:bg-gray-700/50";
   return (
@@ -42,13 +43,13 @@ function NavItem({ to, icon: Icon, children }) {
   );
 }
 
-// --- Main App Layout (protected section) ---
+// --- Main Layout for Protected Area ---
 function AppLayout() {
   const { user, logout } = useContext(AuthContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="relative flex h-screen bg-gray-100 overflow-hidden">
+    <div className="relative flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <nav
         className={`
@@ -69,6 +70,7 @@ function AppLayout() {
           </button>
         </div>
 
+        {/* Navigation Links */}
         <ul className="space-y-2 flex-grow">
           <li>
             <NavItem to="/app/projects" icon={FolderIcon}>
@@ -98,6 +100,7 @@ function AppLayout() {
           )}
         </ul>
 
+        {/* Footer */}
         <div className="mt-auto">
           <div className="px-4 py-2 text-gray-400 text-sm truncate">
             {user?.email} {user?.isAdmin && "(Admin)"}
@@ -112,6 +115,7 @@ function AppLayout() {
         </div>
       </nav>
 
+      {/* Overlay (mobile) */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
@@ -119,7 +123,9 @@ function AppLayout() {
         />
       )}
 
+      {/* Main Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 bg-white shadow-sm">
           <button
             onClick={() => setIsSidebarOpen(true)}
@@ -130,7 +136,8 @@ function AppLayout() {
           <span className="text-lg font-bold text-gray-800">A/B Agent</span>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-white">
           <Outlet />
         </main>
       </div>
@@ -138,24 +145,27 @@ function AppLayout() {
   );
 }
 
-// --- Main App Routes ---
+// --- Main App Router ---
 function App() {
   const { user } = useContext(AuthContext);
 
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Home />} />
+      {/* 🌍 Public Routes */}
+      <Route
+        path="/"
+        element={!user ? <Home /> : <Navigate to="/app/projects" replace />}
+      />
       <Route
         path="/login"
-        element={!user ? <LoginPage /> : <Navigate to="/app/projects" />}
+        element={!user ? <LoginPage /> : <Navigate to="/app/projects" replace />}
       />
       <Route
         path="/signup"
-        element={!user ? <SignupPage /> : <Navigate to="/app/projects" />}
+        element={!user ? <SignupPage /> : <Navigate to="/app/projects" replace />}
       />
 
-      {/* Protected Routes */}
+      {/* 🔒 Protected Routes */}
       <Route
         path="/app"
         element={
@@ -172,7 +182,7 @@ function App() {
           element={<ExperimentSetupPage />}
         />
 
-        {/* Admin Routes */}
+        {/* 🛠️ Admin Routes */}
         <Route
           path="admin/users"
           element={
@@ -191,8 +201,11 @@ function App() {
         />
       </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" />} />
+      {/* 🚫 Catch-All Fallback */}
+      <Route
+        path="*"
+        element={<Navigate to={user ? "/app/projects" : "/"} replace />}
+      />
     </Routes>
   );
 }
