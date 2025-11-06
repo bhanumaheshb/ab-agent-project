@@ -1,20 +1,24 @@
-import React, { useContext } from 'react'; // <-- Add useContext
-import { Navigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // <-- Import AuthContext
+import React, { useContext } from "react";
+import { Navigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useContext(AuthContext); // <-- Use the hook like this
+  const { user, loading } = useContext(AuthContext);
+
   if (loading) {
-    // Show a loading spinner or message while checking auth
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-700 text-lg">
+        Checking authentication...
+      </div>
+    );
   }
 
+  // 🔒 If user is not logged in, redirect to login
   if (!user) {
-    // Not logged in, redirect to login page
     return <Navigate to="/login" replace />;
   }
 
-  // Logged in, show the component they asked for
+  // ✅ Authenticated, allow access
   return children;
 }
 
