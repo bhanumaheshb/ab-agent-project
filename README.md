@@ -226,7 +226,8 @@ A-B-Testing-Agent/
 ## 🧑‍💻 Author
 
 **Name:** Bhanu Mahesh B
-**GitHub:** *(Add your GitHub link here)*
+
+
 **Live Demo:** [https://ab-agent-project.vercel.app](https://ab-agent-project.vercel.app)
 
 ---
