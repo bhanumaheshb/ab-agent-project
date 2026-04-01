@@ -95,7 +95,7 @@ const Home = () => {
 
       {/* --- Footer --- */}
       <footer className="border-t border-slate-700 py-6 text-center text-slate-400 text-sm">
-        © {new Date().getFullYear()} A/B Agent — Built with 💙 by Bhanu Mahesh
+        © {new Date().getFullYear()} A/B Agent — Built with 💙 by 
       </footer>
     </div>
   );
